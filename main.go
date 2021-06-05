@@ -9,7 +9,10 @@ import (
 func main() {
   r := gin.Default()
   models.ConnectDatabase()
-  r.GET("/contacts", controllers.FindContacts)
+  r.GET("/contacts", controllers.GetContacts)
   r.POST("/contact", controllers.CreateContact)
+  r.GET("/contact/:id", controllers.GetContact)
+  r.PATCH("/contact/:id", controllers.UpdateContact)
+	r.DELETE("/contact/:id", controllers.DeleteContact)
   r.Run()
 }
