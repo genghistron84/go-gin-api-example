@@ -10,5 +10,6 @@ func main() {
   r := gin.Default()
   models.ConnectDatabase()
   r.GET("/contacts", controllers.FindContacts)
+  r.POST("/contact", controllers.CreateContact)
   r.Run()
 }
