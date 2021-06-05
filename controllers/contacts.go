@@ -1,6 +1,7 @@
 package controllers
 
 import (
+  "net/http"
   "github.com/gin-gonic/gin"
   "github.com/genghistron84/go-gin-api-example/models"
 )
