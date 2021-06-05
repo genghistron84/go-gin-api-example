@@ -1,16 +1,14 @@
 package main
 
 import (
-  "net/http"
   "github.com/gin-gonic/gin"
+  "github.com/genghistron84/go-gin-api-example/models"
+  "github.com/genghistron84/go-gin-api-example/controllers"
 )
 
 func main() {
   r := gin.Default()
-
-  r.GET("/", func(c *gin.Context) {
-    c.JSON(http.StatusOK, gin.H{"data": "testing"})    
-  })
-
+  models.ConnectDatabase()
+  r.GET("/contacts", controllers.FindContacts)
   r.Run()
 }
