@@ -1,15 +1,20 @@
 package controllers
 
 import (  
-  "log"
   "net/http"
   "github.com/gin-gonic/gin"
   "github.com/ttacon/libphonenumber"
   "github.com/genghistron84/go-gin-api-example/models"
 )
 
-// validation struct
+// validation structs
 type CreateContactInput struct {
+  FullName  string `json:"full_name" binding:"required"`
+  Email string `json:"email"`
+  PhoneNumbers []models.PhoneNumber `json:"phone_numbers" binding:"required,dive"`
+}
+
+type UpdateContactInput struct {
   FullName  string `json:"full_name" binding:"required"`
   Email string `json:"email"`
   PhoneNumbers []models.PhoneNumber `json:"phone_numbers" binding:"required,dive"`
@@ -20,7 +25,7 @@ func GetContacts(c *gin.Context) {
   // initialize array of contact objects
   var contacts []models.Contact
   // use gorm to return a list of all contacts
-  models.DB.Find(&contacts)
+  models.DB.Preload("PhoneNumbers").Find(&contacts)
   // convert to JSON and return
   c.JSON(http.StatusOK, gin.H{"contacts": contacts})
 }
@@ -70,7 +75,35 @@ func GetContact(c *gin.Context) {
 
 // PATCH /contact/:id
 func UpdateContact(c *gin.Context) {
-
+  var contact models.Contact
+	if err := models.DB.Where("id = ?", c.Param("id")).First(&contact).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "contact not found!"})
+		return
+	}
+  
+  // bind posted values and run validations  
+	var input UpdateContactInput
+	if err := c.ShouldBindJSON(&input); err != nil {
+    // return error message if validations fail
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+  
+  // iterate through phone numbers and convert to E164  
+  for i := range input.PhoneNumbers {
+    num, err := libphonenumber.Parse(input.PhoneNumbers[i].Phone, "AU")
+    if err != nil {
+      c.JSON(http.StatusBadRequest, gin.H{"error": "invalid phone number"})
+      return
+    }
+    formattedNum := libphonenumber.Format(num, libphonenumber.E164)
+    input.PhoneNumbers[i].Phone = formattedNum
+  }  
+  
+  // persist to database
+	models.DB.Model(&contact).Updates(input)
+  // return contact if found
+	c.JSON(http.StatusOK, gin.H{"contact": contact})
 }
 
 // DELETE /contact/:id
@@ -78,19 +111,9 @@ func DeleteContact(c *gin.Context) {
   var contact models.Contact
   // check records exists before attempting to delete
   if err := models.DB.Where("id = ?", c.Param("id")).First(&contact).Error; err != nil {
-    c.JSON(http.StatusBadRequest, gin.H{"error": "Record not found!"})
+    c.JSON(http.StatusBadRequest, gin.H{"error": "contact not found!"})
     return
   }
   models.DB.Delete(&contact)
   c.JSON(http.StatusOK, gin.H{"data": "contact deleted"})
-}
-
-// GET /contacts/:id/numbers
-func GetContactNumbers(c *gin.Context) {
-  var phone_numbers []models.PhoneNumber
-  if err := models.DB.Find(&phone_numbers).Where("contact_id = ?", c.Param("id")).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "contact not found!"})
-		return
-	}
-  c.JSON(http.StatusOK, gin.H{"phone_numbers": phone_numbers})
 }

@@ -29,7 +29,7 @@ func main() {
   r := gin.Default()
   models.ConnectDatabase()
   
-  // bind custom E164 Austrlian validation function
+  // bind custom Australian validation function
   if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 		v.RegisterValidation("australianNumber", australianNumber)
 	}
@@ -38,9 +38,7 @@ func main() {
   r.GET("/contacts", controllers.GetContacts)
   r.POST("/contact", controllers.CreateContact)
   r.GET("/contact/:id", controllers.GetContact)
-  r.GET("/contact/:id/numbers", controllers.GetContactNumbers)
   r.PATCH("/contact/:id", controllers.UpdateContact)
 	r.DELETE("/contact/:id", controllers.DeleteContact)
   r.Run()
 }
-
