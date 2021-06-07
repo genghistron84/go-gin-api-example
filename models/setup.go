@@ -15,6 +15,6 @@ func ConnectDatabase() {
   }
 
   database.AutoMigrate(&Contact{})
-
+  database.AutoMigrate(&PhoneNumber{})
   DB = database
 }
